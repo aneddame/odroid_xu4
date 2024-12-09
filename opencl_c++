@@ -1,0 +1,26 @@
+g++ -std=c++11 -o opencl_test opencl_test.cpp -lOpenCL
+
+
+dispaly platform gpu with opencl 
+#define CL_TARGET_OPENCL_VERSION 120
+#include <CL/cl.h>
+#include <iostream>
+
+int main() {
+    cl_uint numPlatforms;
+    clGetPlatformIDs(0, nullptr, &numPlatforms);
+    if (numPlatforms == 0) {
+        std::cout << "No OpenCL platforms found.\n";
+        return -1;
+    }
+
+    cl_platform_id platform;
+    clGetPlatformIDs(1, &platform, nullptr);
+    char platformName[128];
+    clGetPlatformInfo(platform, CL_PLATFORM_NAME, 128, platformName, nullptr);
+    std::cout << "Platform: " << platformName << "\n";
+
+    return 0;
+}
+
+g++ -std=c++11 -o opencl_test opencl_test.cpp -lOpenCL
