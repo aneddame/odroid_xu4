@@ -1,0 +1,91 @@
+opencl with C
+gcc -o hp hello_opencl.c -lOpenCL
+
+
+code hello_opencl.c
+
+include <CL/cl.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+// OpenCL kernel
+const char *kernelSource = 
+"__kernel void hello(__global char* str) { \n"
+"    str[0] = 'H'; \n"
+"    str[1] = 'e'; \n"
+"    str[2] = 'l'; \n"
+"    str[3] = 'l'; \n"
+"    str[4] = 'o'; \n"
+"    str[5] = ','; \n"
+"    str[6] = ' '; \n"
+"    str[7] = 'W'; \n"
+"    str[8] = 'o'; \n"
+"    str[9] = 'r'; \n"
+"    str[10] = 'l'; \n"
+"    str[11] = 'd'; \n"
+"    str[12] = '!'; \n"
+"    str[13] = '\\0'; \n"
+"} \n";
+
+int main() {
+    // Host data
+    char str[14] = "#############"; // Pre-filled with placeholder
+    size_t strSize = sizeof(str);
+
+    // OpenCL variables
+    cl_platform_id platform;
+    cl_device_id device;
+    cl_context context;
+    cl_command_queue queue;
+    cl_program program;
+    cl_kernel kernel;
+    cl_mem buffer;
+    cl_int err;
+
+    // 1. Get Platform and Device Info
+    err = clGetPlatformIDs(1, &platform, NULL);
+    if (err != CL_SUCCESS) {
+
+    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
+    if (err != CL_SUCCESS) {
+        printf("Error: Failed to get device ID!\n");
+        return 1;
+    }
+
+    // 2. Create Context and Command Queue
+    context = clCreateContext(NULL, 1, &device, NULL, NULL, &err);
+    queue = clCreateCommandQueue(context, device, 0, &err);
+
+    // 3. Create and Build Program
+    program = clCreateProgramWithSource(context, 1, &kernelSource, NULL, &err);
+    err = clBuildProgram(program, 1, &device, NULL, NULL, NULL);
+    if (err != CL_SUCCESS) {
+        printf("Error: Failed to build program!\n");
+        return 1;
+    }
+    // 4. Create Kernel and Buffer
+    kernel = clCreateKernel(program, "hello", &err);
+    buffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY, strSize, NULL, &err);
+
+    // 5. Set Kernel Arguments and Execute
+    err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &buffer);
+    size_t globalWorkSize = 1;
+    err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, &globalWorkSize, NULL, 0, NULL, NULL);
+
+    // 6. Read Back Results
+    err = clEnqueueReadBuffer(queue, buffer, CL_TRUE, 0, strSize, str, 0, NULL, NULL);
+
+    // Print the result
+    printf("%s\n", str);
+
+   // Cleanup
+    clReleaseMemObject(buffer);
+    clReleaseKernel(kernel);
+    clReleaseProgram(program);
+    clReleaseCommandQueue(queue);
+    clReleaseContext(context);
+
+    return 0;
+}
+
+
