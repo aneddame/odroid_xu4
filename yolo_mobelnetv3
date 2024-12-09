@@ -1,0 +1,60 @@
+Odroid XU4 using YOLOv4 MobileNetV3 and OpenCV with GPU support in C++
+
+Install the required dependencies:
+
+OpenCV (you've already installed it).
+OpenCL libraries for GPU support.
+Install the Darknet framework or build YOLOv4 MobileNetV3 from source, ensuring that OpenCL is enabled for GPU usage.
+
+**install OpenCL
+Setup YOLO in C++: You'll need to load the YOLOv4 MobileNetV3 model with OpenCV's DNN module.
+Here's a basic code snippet to get started:
+
+ ***Install OpenCV from the official repositories
+
+ install the OpenCV DNN module (opencv2/dnn.hpp), you need to install OpenCV with the DNN module enabled
+
+ sudo apt update
+sudo apt install libopencv-dev
+
+sudo apt update
+sudo apt install build-essential cmake git pkg-config libgtk-3-dev libcanberra-gtk* \
+                 libjpeg-dev libpng-dev libtiff-dev gfortran openexr libatlas-base-dev \
+                 python3-dev python3-numpy libtbb2 libeigen3-dev libgphoto2-dev \
+                 libprotobuf-dev protobuf-compiler libopencv-dev libv4l-dev liblapacke-dev \
+                 libxvidcore-dev libx264-dev libgtk2.0-dev
+git clone https://github.com/opencv/opencv.git
+git clone https://github.com/opencv/opencv_contrib.git
+
+cd opencv
+mkdir build
+cd build
+cmake -D CMAKE_BUILD_TYPE=RELEASE \
+      -D CMAKE_INSTALL_PREFIX=/usr/local \
+      -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules \
+      -D WITH_OPENCL=ON ..  # Enable OpenCL for GPU acceleration if needed
+make -j$(nproc) 
+sudo make install
+
+
+pkg-config --modversion opencv4
+pkg-config --cflags opencv4   #ex -I/usr/local/include/opencv4
+
+#include <opencv2/opencv.hpp>
+#include <opencv2/dnn.hpp>
+
+int main() {
+    std::cout << "OpenCV DNN Module is installed successfully!" << std::endl;
+    return 0;
+}
+
+
+g++ -std=c++11 -o test_dnn test_dnn.cpp \
+    -I/usr/local/include/opencv4 \
+    -L/usr/local/lib \
+    -lopencv_core -lopencv_dnn -lopencv_imgcodecs -lopencv_highgui
+
+
+
+
+
