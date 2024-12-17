@@ -23,7 +23,7 @@ int main(int argc, char **argv)
 String modelTxt = "/home/odroid/Desktop/MobileNet-SSD/mobilenet/MobileNetSSD_deploy.prototxt";
 String modelBin = "/home/odroid/Desktop/MobileNet-SSD/mobilenet/MobileNetSSD_deploy.caffemodel";
     
-    String imageFile = (argc > 1) ? argv[1] : "space_shuttle.jpg";
+    String imageFile = "/home/odroid/Desktop/MobileNet-SSD/mobilenet/images/000456.jpg";
     Net net = dnn::readNetFromCaffe(modelTxt, modelBin);
     net.setPreferableTarget(1);
     if (net.empty())
