@@ -1,1 +1,7 @@
+git clone https://github.com/MediosZ/MobileNet-SSD.git
+
+String modelTxt = "/home/odroid/Desktop/MobileNet-SSD/mobilenet/MobileNetSSD_deploy.prototxt";
+String modelBin = "/home/odroid/Desktop/MobileNet-SSD/mobilenet/MobileNetSSD_deploy.caffemodel";
+
+./opencv_dnn /home/odroid/Desktop/MobileNet-SSD/images/img1.jpg
 
