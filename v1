@@ -5,3 +5,7 @@ String modelBin = "/home/odroid/Desktop/MobileNet-SSD/mobilenet/MobileNetSSD_dep
 
 ./opencv_dnn /home/odroid/Desktop/MobileNet-SSD/images/img1.jpg
 
+Disable OpenCL for DNN in OpenCV
+export OPENCV_OPENCL_RUNTIME=NULL
+./opencv_dnn
+
