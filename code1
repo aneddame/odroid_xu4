@@ -59,7 +59,7 @@ int main(int argc, char **argv)
     std::cout << "Time spent: " << time_elapsed << " seconds" << std::endl;
 
     // Set OpenMP to use 2 threads
-    omp_set_num_threads(4);
+    omp_set_num_threads(2);
 
     // Process the output
     Mat detectionMat(detection.size[2], detection.size[3], CV_32F, detection.ptr<float>());
