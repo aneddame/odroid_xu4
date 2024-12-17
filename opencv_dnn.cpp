@@ -19,8 +19,9 @@ string CLASSES[] = {"background", "aeroplane", "bicycle", "bird", "boat",
 int main(int argc, char **argv)
 {
     CV_TRACE_FUNCTION();
-    String modelTxt = "MobileNetSSD_deploy.prototxt";
-    String modelBin = "MobileNetSSD_deploy.caffemodel";
+ 
+String modelTxt = "/home/odroid/Desktop/MobileNet-SSD/mobilenet/MobileNetSSD_deploy.prototxt";
+String modelBin = "/home/odroid/Desktop/MobileNet-SSD/mobilenet/MobileNetSSD_deploy.caffemodel";
     
     String imageFile = (argc > 1) ? argv[1] : "space_shuttle.jpg";
     Net net = dnn::readNetFromCaffe(modelTxt, modelBin);
