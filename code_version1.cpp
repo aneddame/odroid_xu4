@@ -1,3 +1,6 @@
+#g++ -std=c++11 -fopenmp -o code1 code1.cpp `pkg-config --cflags --libs opencv4`
+
+
 #include <opencv2/dnn.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
