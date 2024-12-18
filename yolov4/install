@@ -1,0 +1,21 @@
+Set up the environment:
+Install OpenCV: Ensure OpenCV is installed on your Odroid XU4.
+Install Darknet (YOLOv4): You need the YOLOv4 weights and configuration file. Darknet is the framework that YOLO uses.
+
+ Install YOLOv4 (Darknet):
+Clone the Darknet repository:
+
+git clone https://github.com/AlexeyAB/darknet
+cd darknet
+Modify the Makefile to enable GPU support (if available), OpenCV, and other configurations:
+sed -i 's/GPU=0/GPU=1/' Makefile
+sed -i 's/CUDNN=0/CUDNN=1/' Makefile
+sed -i 's/OPENCV=0/OPENCV=1/' Makefile
+sed -i 's/AVX=0/AVX=1/' Makefile
+Build Darknet:
+
+make
+
+Download YOLOv4 Weights:
+https://github.com/AlexeyAB/darknet/releases/download/yolov4/yolov4.weights  //in desktop
+scp /home/rid1/Downloads/yolov4.weights odroid@192.168.1.109:/home/odroid/darknet/cfg/
