@@ -92,3 +92,4 @@ int main() {
 
     return 0;
 }
+//compile  g++ -std=c++11 -o yolov4 yolov4.cpp `pkg-config --cflags --libs opencv4`
