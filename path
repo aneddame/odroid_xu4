@@ -1,0 +1,17 @@
+odroid@odroid:~/Desktop/MobileNet-SSD/projet/codes$ ls
+007501.png  007512.png  007515.png  007517.png  code  code1  code1.cpp  code.cpp  mobilenet_opencl  object  object_detection.cpp
+odroid@odroid:~/Desktop/MobileNet-SSD/projet/codes$ ./code1
+Time spent: 1.27859 seconds
+person: 0.977192
+car: 0.281168
+Sorted detected objects (by confidence):
+Object: person, Confidence: 0.977192
+Object: car, Confidence: 0.281168
+odroid@odroid:~/Desktop/MobileNet-SSD/projet/codes$ 
+
+
+
+
+odroid@odroid:~/Desktop$ nano yolov4.cpp
+odroid@odroid:~/Desktop$ g++ -std=c++11 -o yolov4 yolov4.cpp `pkg-config --cflags --libs opencv4`
+odroid@odroid:~/Desktop$ ./yolov4
