@@ -12,6 +12,7 @@ odroid@odroid:~/Desktop/MobileNet-SSD/projet/codes$
 
 
 
+
 odroid@odroid:~/Desktop$ nano yolov4.cpp
 odroid@odroid:~/Desktop$ g++ -std=c++11 -o yolov4 yolov4.cpp `pkg-config --cflags --libs opencv4`
 odroid@odroid:~/Desktop$ ./yolov4
