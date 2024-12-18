@@ -22,7 +22,6 @@ scp /home/rid1/Downloads/yolov4.weights odroid@192.168.1.109:/home/odroid/darkne
 
 code 
 
-
 #include <opencv2/opencv.hpp>
 #include <opencv2/dnn.hpp>
 #include <iostream>
@@ -107,7 +106,16 @@ int main() {
         int idx = indices[i];
         Rect box = boxes[idx];
         rectangle(image, box, Scalar(0, 255, 0), 2);
-    }}
+    }
+
+    // Display the image
+    namedWindow("Detections", WINDOW_NORMAL);
+    imshow("Detections", image);
+    waitKey(0);
+
+    return 0;
+}
+
 g++ -std=c++11 -o yolov4 yolov4.cpp `pkg-config --cflags --libs opencv4`
 
 
