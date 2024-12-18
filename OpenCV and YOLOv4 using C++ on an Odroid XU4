@@ -21,7 +21,9 @@ https://github.com/AlexeyAB/darknet/releases/download/yolov4/yolov4.weights  //i
 scp /home/rid1/Downloads/yolov4.weights odroid@192.168.1.109:/home/odroid/darknet/cfg/
 
 code 
-g++ -std=c++11 -o yolo_detect yolo_d#include <opencv2/opencv.hpp>
+
+
+#include <opencv2/opencv.hpp>
 #include <opencv2/dnn.hpp>
 #include <iostream>
 
@@ -31,8 +33,8 @@ using namespace std;
 
 int main() {
     // Load YOLOv4 model
-    String modelConfiguration = "yolov4.cfg"; // Path to YOLOv4 config file
-    String modelWeights = "yolov4.weights"; // Path to YOLOv4 weights file
+    String modelConfiguration = "/home/odroid/darknet/cfg/yolov4.cfg"; // Path to YOLOv4 config file
+    String modelWeights = "/home/odroid/darknet/cfg/yolov4.weights"; // Path to YOLOv4 weights file
     Net net = readNetFromDarknet(modelConfiguration, modelWeights);
 
     // Set backend and target
@@ -105,8 +107,8 @@ int main() {
         int idx = indices[i];
         Rect box = boxes[idx];
         rectangle(image, box, Scalar(0, 255, 0), 2);
-    }
-g++ -std=c++11 -o test test.cpp `pkg-config --cflags --libs opencv4`
+    }}
+g++ -std=c++11 -o yolov4 yolov4.cpp `pkg-config --cflags --libs opencv4`
 
 
 
