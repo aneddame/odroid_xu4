@@ -1,0 +1,2 @@
+sudo su
+sudo apt install libpcl-dev
