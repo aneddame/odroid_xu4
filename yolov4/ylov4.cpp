@@ -1,7 +1,9 @@
 
+//compile  g++ -std=c++11 -o yolov4 yolov4.cpp `pkg-config --cflags --libs opencv4`
 #include <opencv2/opencv.hpp>
 #include <opencv2/dnn.hpp>
 #include <iostream>
+#include <chrono> // For timing
 
 using namespace cv;
 using namespace cv::dnn;
@@ -18,11 +20,14 @@ int main() {
     net.setPreferableTarget(DNN_TARGET_CPU);
 
     // Load the image
-    Mat image = imread("download.jpeg"); // Replace with your image path
+    Mat image = imread("/home/odroid/Desktop/MobileNet-SSD/mobilenet/images/000456.jpg"); // Replace with your image path
     if (image.empty()) {
         cout << "Could not open or find the image!" << endl;
         return -1;
     }
+
+    // Start timing
+    auto start = chrono::high_resolution_clock::now();
 
     // Get the blob from the image
     Mat blob;
@@ -85,6 +90,13 @@ int main() {
         rectangle(image, box, Scalar(0, 255, 0), 2);
     }
 
+    // End timing
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double> elapsed = end - start;
+
+    // Display the time spent
+    cout << "Time spent: " << elapsed.count() << " seconds" << endl;
+
     // Display the image
     namedWindow("Detections", WINDOW_NORMAL);
     imshow("Detections", image);
@@ -92,4 +104,3 @@ int main() {
 
     return 0;
 }
-//compile  g++ -std=c++11 -o yolov4 yolov4.cpp `pkg-config --cflags --libs opencv4`
