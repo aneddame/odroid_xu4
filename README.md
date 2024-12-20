@@ -1,4 +1,4 @@
-![Time Spent Graph](time_spent_graph.png)
+![Time Spent Graph](resultat.png)
 
 YOLOv4: This method took the most time, with a total of 34.9722 seconds. YOLOv4 (You Only Look Once version 4) is a popular and powerful deep learning model for real-time object detection. However, its processing time can be higher due to the complexity of the model and the need for high computational resources.
 
