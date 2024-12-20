@@ -1,3 +1,8 @@
+odroid@odroid:~/Desktop/deep_learning$ ./yolov4
+Time spent: 34.9722 seconds
+^C
+odroid@odroid:~/Desktop/deep_learning$ 
+
 odroid@odroid:~/Desktop/deep_learning$ ./opencv_dnn  sans openmp
 Failed to load OpenCL runtime
 [ WARN:0@0.437] global net_impl.cpp:153 setUpNet DNN: OpenCL target is not supported with current OpenCL device (tested with GPUs only), switching to CPU.
