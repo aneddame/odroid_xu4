@@ -9,4 +9,3 @@ OpenCV DNN with OpenMP: The third method, OpenCV DNN with OpenMP, took 1.25977 s
 Key Insights:
 YOLOv4 is much slower than OpenCV DNN and OpenCV DNN with OpenMP. This suggests that while YOLOv4 is highly accurate, it is computationally intensive.
 OpenCV DNN and OpenCV DNN with OpenMP are significantly faster, with the OpenMP-optimized version being marginally quicker.
-This comparison highlights the trade-offs between accuracy (YOLOv4) and speed (OpenCV DNN, OpenCV DNN with OpenMP), which is a common consideration when choosing a model for real-time applications.
