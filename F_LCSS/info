@@ -1,0 +1,5 @@
+Pour appliquer l'algorithme Fuzzy Longest Common Subsequence (F_LCSS) sur des images, il faudra :
+
+Extraire des caractéristiques ou des points d'intérêt des images (par exemple, en utilisant des détecteurs comme SIFT, ORB, ou autre).
+Comparer les trajectoires des points d'intérêt extraits entre deux images.
+Implémenter et intégrer l'algorithme F_LCSS en C++.
