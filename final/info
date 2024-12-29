@@ -1,1 +1,16 @@
+Points Clés
+Détection des objets :
 
+Les rectangles des objets détectés sont extraits et leurs centres sont utilisés comme trajectoires pour F_LCSS.
+Application de F_LCSS :
+
+La similarité des trajectoires est calculée, et un pourcentage est affiché pour indiquer le degré de similarité.
+Affichage des résultats :
+
+Les objets détectés sont affichés dans les deux images avec des rectangles verts.
+Affichage des Similarités
+Le pourcentage de similarité est calculé comme :
+
+Similarite(%)=(Score F_LCSS /min(Traj1,Traj2))×100
+
+Cela représente combien les objets détectés dans les deux images sont similaires.
