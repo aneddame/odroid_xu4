@@ -1,1 +1,3 @@
 
+Disable OpenCL for DNN in OpenCV
+export OPENCV_OPENCL_RUNTIME=NULL
