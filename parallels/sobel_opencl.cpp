@@ -4,6 +4,7 @@
 #include <opencv2/opencv.hpp>
 #include <stdio.h>
 #include <stdlib.h>
+#include <chrono> // Pour mesurer le temps
 
 // Macro for error checking
 #define CHECK_ERROR(err, msg) \
@@ -138,10 +139,20 @@ int main() {
     err = clSetKernelArg(kernel, 3, sizeof(int), &height);
     CHECK_ERROR(err, "Setting kernel arg 3");
 
+    // Start measuring time
+    auto startTime = std::chrono::high_resolution_clock::now();
+
     // Execute the kernel
     size_t globalSize[2] = { (size_t)width, (size_t)height };
     err = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, globalSize, NULL, 0, NULL, NULL);
     CHECK_ERROR(err, "Enqueueing kernel");
+
+    // Wait for the computation to finish
+    clFinish(queue);
+
+    // End measuring time
+    auto endTime = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsedTime = endTime - startTime;
 
     // Read back the result
     err = clEnqueueReadBuffer(queue, outputBuffer, CL_TRUE, 0, imageSize, outputImage.data, 0, NULL, NULL);
@@ -151,7 +162,8 @@ int main() {
     cv::imshow("Sobel Output", outputImage);
     cv::waitKey(0); // Wait for a key press to close the window
 
-    printf("Sobel filter applied successfully. Output displayed.\n");
+    printf("Sobel filter applied successfully.\n");
+    printf("Temps de traitement : %.6f secondes.\n", elapsedTime.count());
 
     // Cleanup
     clReleaseMemObject(inputBuffer);
