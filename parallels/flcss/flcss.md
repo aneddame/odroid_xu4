@@ -1,28 +1,13 @@
-# Fuzzy Longest Common Subsequence (F_LCSS) with Sobel Edge Detection
+# Fuzzy Longest Common Subsequence (F_LCSS) avec Détection de Bords Sobel
 
-This project applies **Fuzzy Longest Common Subsequence (F_LCSS)** to compare the edges detected in two images using **Sobel filters**. The approach first detects the edges in both images, extracts the points representing strong edges, and then compares these points using a fuzzy similarity function to compute a similarity score.
+Ce projet applique la **Fuzzy Longest Common Subsequence (F_LCSS)** pour comparer les bords détectés dans deux images à l'aide des **filtres Sobel**. L'approche détecte d'abord les bords dans les deux images, extrait les points représentant les bords forts, puis compare ces points à l'aide d'une fonction de similarité floue pour calculer un score de similarité.
 
 ## Description
 
-1. **Sobel Edge Detection**: The Sobel filter is applied manually to compute the gradients in both the horizontal and vertical directions. This step highlights the edges in the image by calculating the gradient magnitude at each pixel.
+1. **Détection de Bords Sobel** : Le filtre Sobel est appliqué manuellement pour calculer les gradients dans les directions horizontale et verticale. Cette étape met en évidence les bords de l'image en calculant l'amplitude du gradient pour chaque pixel.
 
-2. **Fuzzy Longest Common Subsequence (F_LCSS)**: After detecting edges in both images, the points where strong edges are detected are extracted as trajectories. These trajectories are then compared using a fuzzy similarity function. The function assigns a membership value to each point in the sequence based on its distance from other points. The F_LCSS score is calculated as a similarity percentage between the two image trajectories.
+2. **Fuzzy Longest Common Subsequence (F_LCSS)** : Après la détection des bords dans les deux images, les points où les bords forts sont détectés sont extraits comme trajectoires. Ces trajectoires sont ensuite comparées à l'aide d'une fonction de similarité floue. La fonction attribue une valeur d'appartenance à chaque point de la séquence en fonction de sa distance par rapport à d'autres points. Le score F_LCSS est calculé en pourcentage de similarité entre les trajectoires des deux images.
 
-3. **Visualization**: The points corresponding to strong edges are marked on the images in different colors (red for image 1, blue for image 2). The images are then displayed side by side for easy visual comparison.
+3. **Visualisation** : Les points correspondant aux bords forts sont marqués sur les images en couleurs différentes (rouge pour l'image 1, bleu pour l'image 2). Les images sont ensuite affichées côte à côte pour une comparaison visuelle facile.
 
-4. **Processing Time**: The program measures and outputs the time taken for each significant step, including image loading, Sobel edge detection, and F_LCSS computation.
-
-## Requirements
-
-- **OpenCV** (version 4.x or higher)
-- A C++ compiler with support for C++11 or higher
-
-## How to Run
-
-1. Clone this repository to your local machine.
-2. Install OpenCV for C++ (if not already installed).
-3. Compile and run the program with the following command:
-
-   ```bash
-   g++ -std=c++11 -o fuzzy_lcss fuzzy_lcss.cpp `pkg-config --cflags --libs opencv4`
-   ./fuzzy_lcss
+4. **Temps de Traitement** : Le programme mesure et affiche le temps nécessaire pour chaque étape significative, y compris le chargement des images, la détection des bords Sobel et le calcul de F_LCSS.
