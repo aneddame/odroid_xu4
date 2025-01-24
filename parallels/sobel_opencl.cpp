@@ -1,4 +1,4 @@
-//g++ -std=c++11 -o sobel_filter sobel_filter.cpp -lOpenCL `pkg-config --cflags --libs opencv4`
+// g++ -std=c++11 -o sobel_filter sobel_filter.cpp -lOpenCL `pkg-config --cflags --libs opencv4`
 
 #include <CL/cl.h>
 #include <opencv2/opencv.hpp>
@@ -68,6 +68,11 @@ int main() {
         fprintf(stderr, "Failed to load image: %s\n", imagePath);
         return -1;
     }
+
+    // Resize the input image
+    int newWidth = 512;  // Set desired width
+    int newHeight = 512; // Set desired height
+    cv::resize(inputImage, inputImage, cv::Size(newWidth, newHeight), 0, 0, cv::INTER_LINEAR);
 
     int width = inputImage.cols;
     int height = inputImage.rows;
@@ -142,13 +147,11 @@ int main() {
     err = clEnqueueReadBuffer(queue, outputBuffer, CL_TRUE, 0, imageSize, outputImage.data, 0, NULL, NULL);
     CHECK_ERROR(err, "Reading output buffer");
 
-    // Save the output image
-    if (!cv::imwrite("sobel_output.jpg", outputImage)) {
-        fprintf(stderr, "Failed to save output image\n");
-        return -1;
-    }
+    // Display the output image
+    cv::imshow("Sobel Output", outputImage);
+    cv::waitKey(0); // Wait for a key press to close the window
 
-    printf("Sobel filter applied successfully. Output saved as sobel_output.jpg\n");
+    printf("Sobel filter applied successfully. Output displayed.\n");
 
     // Cleanup
     clReleaseMemObject(inputBuffer);
