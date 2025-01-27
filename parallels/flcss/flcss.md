@@ -12,3 +12,4 @@ Ce projet applique la **Fuzzy Longest Common Subsequence (F_LCSS)** pour compare
 
 4. **Temps de Traitement** : Le programme mesure et affiche le temps nécessaire pour chaque étape significative, y compris le chargement des images, la détection des bords Sobel et le calcul de F_LCSS.
 ![T](resultat_flcss.png)
+![T](sans_avec.png)
