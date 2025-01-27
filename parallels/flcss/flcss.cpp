@@ -84,8 +84,8 @@ int main() {
     double startTime = (double)getTickCount();
 
     // Charger les images
-    string imageFile1 = "/home/odroid/Desktop/flcss/img/right/3.jpeg";
-    string imageFile2 = "/home/odroid/Desktop/flcss/img/lift/3.jpeg";
+    string imageFile1 = "/home/odroid/Desktop/MobileNet-SSD/mobilenet/images/000456.jpg";
+    string imageFile2 = "/home/odroid/Desktop/MobileNet-SSD/mobilenet/images/000456.jpg";
 
     Mat img1 = imread(imageFile1, IMREAD_COLOR);
     Mat img2 = imread(imageFile2, IMREAD_COLOR);
