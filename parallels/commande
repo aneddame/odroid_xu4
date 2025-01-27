@@ -1,3 +1,6 @@
+ssh -X odroid@192....
+
 export OPENCV_OPENCL_RUNTIME=NULL
-g++ -std=c++11 -o code code.cpp `pkg-config --cflags --libs opencv4`
+
+g++ -std=c++11 -o code_opencl2 code_opencl2.cpp -lOpenCL `pkg-config --cflags --libs opencv4`
 
