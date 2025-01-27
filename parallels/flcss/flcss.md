@@ -11,5 +11,13 @@ Ce projet applique la **Fuzzy Longest Common Subsequence (F_LCSS)** pour compare
 3. **Visualisation** : Les points correspondant aux bords forts sont marqués sur les images en couleurs différentes (rouge pour l'image 1, bleu pour l'image 2). Les images sont ensuite affichées côte à côte pour une comparaison visuelle facile.
 
 4. **Temps de Traitement** : Le programme mesure et affiche le temps nécessaire pour chaque étape significative, y compris le chargement des images, la détection des bords Sobel et le calcul de F_LCSS.
+
+
+## Résultats
 ![T](resultat_flcss.png)
+### Temps de Traitement
+
+- **Sans OpenCL** : 52.73 secondes  
+- **Avec OpenCL** : 0.27 secondes 
+
 ![T](sans_avec.png)
