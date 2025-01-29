@@ -22,3 +22,4 @@ The code utilizes OpenCL for efficient parallel processing on the GPU, OpenMP fo
 
 4. **OpenCL and OpenMP**: The project uses OpenCL for GPU acceleration and OpenMP for multi-core CPU processing, providing better performance for the computationally expensive parts.
 
+**the final code, the folder where it's stored (`odroid_xu4/parallels/final_detectObjet_sobel_flcss/`)**
