@@ -10,5 +10,7 @@ This document compares the processing time between the parallel and non-parallel
 ### Processing Time Comparison Graph:
 ![Processing Time Comparison](./img/processing_time_comparison.png)
 
+### Detected Object Matches:
+![Detected Object Matches](./img/result.png)
 ### Conclusion:
 The parallel version of the code significantly reduced the processing time compared to the non-parallel version.
