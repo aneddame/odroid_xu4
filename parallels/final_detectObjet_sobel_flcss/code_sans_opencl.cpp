@@ -13,6 +13,18 @@ using namespace std;
 string CLASSES[] = {"background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair",
                     "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"};
 
+// Noyaux Sobel
+const int sobelX[3][3] = {
+    {-1, 0, 1},
+    {-2, 0, 2},
+    {-1, 0, 1}
+};
+const int sobelY[3][3] = {
+    {-1, -2, -1},
+    { 0,  0,  0},
+    { 1,  2,  1}
+};
+
 // Charger le modèle MobileNet-SSD
 Net loadModel() {
     String modelTxt = "/home/odroid/Desktop/MobileNet-SSD/mobilenet/MobileNetSSD_deploy.prototxt";
@@ -54,15 +66,41 @@ Mat detectObjects(Net &net, Mat &img) {
     return img;
 }
 
-// Appliquer le filtre Sobel
-Mat applySobel(const Mat &gray) {
-    Mat grad_x, grad_y, abs_grad_x, abs_grad_y, sobelMag;
-    Sobel(gray, grad_x, CV_16S, 1, 0, 3);
-    Sobel(gray, grad_y, CV_16S, 0, 1, 3);
-    convertScaleAbs(grad_x, abs_grad_x);
-    convertScaleAbs(grad_y, abs_grad_y);
-    addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0, sobelMag);
-    return sobelMag;
+// Filtre Sobel manuel
+void apply_sobel_manual(const Mat& input, Mat& gradientX, Mat& gradientY, Mat& magnitude) {
+    CV_Assert(input.type() == CV_8U);  // S'assurer que l'image est en niveaux de gris
+
+    int width = input.cols;
+    int height = input.rows;
+
+    gradientX = Mat::zeros(input.size(), CV_32F);
+    gradientY = Mat::zeros(input.size(), CV_32F);
+    magnitude = Mat::zeros(input.size(), CV_32F);
+
+    for (int y = 1; y < height - 1; ++y) {  // Éviter les bords
+        for (int x = 1; x < width - 1; ++x) {
+            float gx = 0.0f, gy = 0.0f;
+
+            // Parcourir le voisinage 3x3
+            for (int ky = -1; ky <= 1; ++ky) {
+                for (int kx = -1; kx <= 1; ++kx) {
+                    int pixel = input.at<uchar>(y + ky, x + kx);
+                    gx += pixel * sobelX[ky + 1][kx + 1];
+                    gy += pixel * sobelY[ky + 1][kx + 1];
+                }
+            }
+
+            gradientX.at<float>(y, x) = gx;
+            gradientY.at<float>(y, x) = gy;
+
+            // Magnitude des gradients
+            magnitude.at<float>(y, x) = std::sqrt(gx * gx + gy * gy);
+        }
+    }
+
+    // Normaliser pour affichage
+    normalize(magnitude, magnitude, 0, 255, NORM_MINMAX);
+    magnitude.convertTo(magnitude, CV_8U);
 }
 
 // Calculer la similarité F_LCSS
@@ -105,14 +143,18 @@ int main() {
     Mat img1Detected = detectObjects(net, img1);
     Mat img2Detected = detectObjects(net, img2);
 
+    
     // Convertir en niveaux de gris
     Mat gray1, gray2;
-    cvtColor(img1Detected, gray1, COLOR_BGR2GRAY);
-    cvtColor(img2Detected, gray2, COLOR_BGR2GRAY);
+    cvtColor(img1, gray1, COLOR_BGR2GRAY);
+    cvtColor(img2, gray2, COLOR_BGR2GRAY);
 
-    // Appliquer Sobel
-    Mat sobel1 = applySobel(gray1);
-    Mat sobel2 = applySobel(gray2);
+    // Appliquer Sobel manuellement
+    Mat gradX1, gradY1, sobel1;
+    Mat gradX2, gradY2, sobel2;
+
+    apply_sobel_manual(gray1, gradX1, gradY1, sobel1);
+    apply_sobel_manual(gray2, gradX2, gradY2, sobel2);
 
     // Calculer la similarité F_LCSS
     float similarity = F_LCSS(sobel1, sobel2);
@@ -137,13 +179,15 @@ int main() {
     Mat img_matches;
     hconcat(img1Copy, img2Copy, img_matches);
 
-    // Afficher les résultats
-    imshow("Détection d'objets", img_matches);
-    waitKey(0);
-
+    // Calculer le temps de traitement
     double endTime = (double)getTickCount();
     double processingTime = (endTime - startTime) / getTickFrequency();
     cout << "Temps de traitement : " << processingTime << " secondes" << endl;
+
+   
+    // Afficher les résultats
+    imshow("Détection d'objets", img_matches);
+    waitKey(0);
 
     return 0;
 }
