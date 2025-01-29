@@ -22,25 +22,3 @@ The code utilizes OpenCL for efficient parallel processing on the GPU, OpenMP fo
 
 4. **OpenCL and OpenMP**: The project uses OpenCL for GPU acceleration and OpenMP for multi-core CPU processing, providing better performance for the computationally expensive parts.
 
-## Setup and Requirements
-
-To run this project, you need the following:
-
-- **C++**: For compiling and running the main program.
-- **OpenCV**: For image processing and object detection.
-- **OpenCL**: For GPU-accelerated computations.
-- **OpenMP**: For parallel CPU processing.
-- **Caffe Model Files**: MobileNet-SSD model files (`.prototxt` and `.caffemodel`).
-
-### Installation
-
-1. **Install OpenCV**: Follow the official OpenCV installation guide for your platform.
-2. **Install OpenCL**: Install the OpenCL SDK suitable for your GPU (Mali-T628 in this case).
-3. **Download Caffe Model**: You will need the MobileNet-SSD model files. Download them from [here](https://github.com/chuanqi305/MobileNet-SSD).
-
-### Build Instructions
-
-1. Clone the repository to your local machine:
-
-   ```bash
-   git clone <your-repository-url>
