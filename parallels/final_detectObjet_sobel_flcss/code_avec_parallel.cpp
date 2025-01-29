@@ -272,5 +272,14 @@ int main() {
     imshow("Détection d'objets", img_matches);
     waitKey(0);
 
+    // Release OpenCL resources
+    clReleaseMemObject(inputBuffer1);
+    clReleaseMemObject(inputBuffer2);
+    clReleaseMemObject(outputBuffer1);
+    clReleaseMemObject(outputBuffer2);
+    clReleaseKernel(kernel);
+    clReleaseProgram(program);
+    clReleaseCommandQueue(queue);
+    clReleaseContext(context);
     return 0;
 }
