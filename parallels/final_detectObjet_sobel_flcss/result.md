@@ -8,7 +8,7 @@ This document compares the processing time between the parallel and non-parallel
 - **Non-Parallel Version**: 3.17 seconds
 
 ### Processing Time Comparison Graph:
-![Processing Time Comparison](processing_time_comparison.png)
+![Processing Time Comparison](./img/processing_time_comparison.png)
 
 ### Conclusion:
 The parallel version of the code significantly reduced the processing time compared to the non-parallel version.
