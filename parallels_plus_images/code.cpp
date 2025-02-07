@@ -169,11 +169,16 @@ int main() {
     cl_command_queue queue;
     cl_context context = setup_opencl(device, queue, platform);
 
+    // Variables for trajectory extraction
+    vector<Point2f> prevPoints, currPoints;
+    Mat prevGray;
+    vector<Scalar> colors; // Colors for drawing trajectories
+
     // Process each image in the dataset
-    for (const string& imageFile : imageFiles) {
-        Mat img = imread(imageFile, IMREAD_COLOR);
+    for (size_t i = 0; i < imageFiles.size(); ++i) {
+        Mat img = imread(imageFiles[i], IMREAD_COLOR);
         if (img.empty()) {
-            cerr << "Impossible de charger l'image: " << imageFile << endl;
+            cerr << "Impossible de charger l'image: " << imageFiles[i] << endl;
             continue;
         }
 
@@ -181,11 +186,11 @@ int main() {
         Mat gray;
         cvtColor(img, gray, COLOR_BGR2GRAY);
 
+        // Apply Sobel filter (optional, not used for trajectory extraction)
         int width = gray.cols;
         int height = gray.rows;
         size_t imageSize = width * height;
 
-        // Create OpenCL buffers
         cl_mem inputBuffer = clCreateBuffer(context, CL_MEM_READ_ONLY, imageSize, NULL, NULL);
         cl_mem outputBuffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY, imageSize, NULL, NULL);
 
@@ -193,7 +198,6 @@ int main() {
         err = clEnqueueWriteBuffer(queue, inputBuffer, CL_TRUE, 0, imageSize, gray.data, 0, NULL, NULL);
         CHECK_ERROR(err, "Writing input buffer");
 
-        // Create program and compile
         cl_program program = clCreateProgramWithSource(context, 1, &kernelSource, NULL, &err);
         CHECK_ERROR(err, "Creating program");
 
@@ -225,16 +229,43 @@ int main() {
 
         clWaitForEvents(1, &event);  // Asynchronous execution
 
-        // Read back the output
         Mat sobelMag(height, width, CV_8U);
         err = clEnqueueReadBuffer(queue, outputBuffer, CL_TRUE, 0, imageSize, sobelMag.data, 0, NULL, NULL);
         CHECK_ERROR(err, "Reading output buffer");
 
-        // Détecter les objets dans l'image originale (pas dans l'image Sobel)
+        // Détecter les objets dans l'image originale
         Mat imgDetected = detectObjects(net, img);
 
-        // Afficher uniquement l'image avec les objets détectés (bounding boxes)
-        imshow("Detected Objects", imgDetected);
+        // Trajectory extraction using optical flow
+        if (!prevGray.empty()) {
+            vector<uchar> status;
+            vector<float> err;
+            calcOpticalFlowPyrLK(prevGray, gray, prevPoints, currPoints, status, err);
+
+            // Draw trajectories
+            for (size_t j = 0; j < currPoints.size(); ++j) {
+                if (status[j]) {
+                    line(imgDetected, prevPoints[j], currPoints[j], colors[j], 2);
+                    circle(imgDetected, currPoints[j], 3, colors[j], -1);
+                }
+            }
+        }
+
+        // Update previous points and image
+        goodFeaturesToTrack(gray, currPoints, 100, 0.01, 10);
+        prevPoints = currPoints;
+        prevGray = gray.clone();
+
+        // Generate random colors for trajectories
+        if (colors.empty()) {
+            RNG rng;
+            for (size_t j = 0; j < currPoints.size(); ++j) {
+                colors.push_back(Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255)));
+            }
+        }
+
+        // Afficher uniquement l'image avec les objets détectés et les trajectoires
+        imshow("Detected Objects with Trajectories", imgDetected);
         waitKey(1); // Wait for a short time to display the image
 
         // Cleanup OpenCL resources for this image
