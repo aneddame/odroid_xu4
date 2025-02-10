@@ -1,11 +1,9 @@
-#include <CL/cl.h>
 #include <opencv2/opencv.hpp>
 #include <opencv2/dnn.hpp>
 #include <vector>
 #include <cmath>
 #include <iostream>
 #include <fstream>
-#include <omp.h>
 #include <dirent.h> // For directory handling
 
 using namespace cv;
@@ -16,13 +14,7 @@ using namespace std;
 string CLASSES[] = {"background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair",
                     "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"};
 
-#define CHECK_ERROR(err, msg) \
-    if (err != CL_SUCCESS) { \
-        fprintf(stderr, "%s failed with error %d\n", msg, err); \
-        exit(1); \
-    }
-
-// Function to compute Intersection over Union (IoU)
+// Fonction pour calculer l'Intersection over Union (IoU)
 float computeIoU(const Rect& bbox1, const Rect& bbox2) {
     int x1 = max(bbox1.x, bbox2.x);
     int y1 = max(bbox1.y, bbox2.y);
@@ -38,12 +30,12 @@ float computeIoU(const Rect& bbox1, const Rect& bbox2) {
     return float(intersectionArea) / float(unionArea);
 }
 
-// Function to load timestamps from file
+// Fonction pour charger les timestamps depuis un fichier
 vector<string> loadTimestamps(const string& timestampFile) {
     vector<string> timestamps;
     ifstream file(timestampFile);
     if (!file.is_open()) {
-        cerr << "Could not open timestamp file: " << timestampFile << endl;
+        cerr << "Impossible d'ouvrir le fichier des timestamps: " << timestampFile << endl;
         exit(-1);
     }
     string line;
@@ -54,7 +46,7 @@ vector<string> loadTimestamps(const string& timestampFile) {
     return timestamps;
 }
 
-// Function to get all image files in a directory
+// Fonction pour récupérer les fichiers images dans un dossier
 vector<string> getImageFiles(const string& folderPath) {
     vector<string> imageFiles;
     DIR* dir;
@@ -68,10 +60,10 @@ vector<string> getImageFiles(const string& folderPath) {
         }
         closedir(dir);
     } else {
-        cerr << "Could not open directory: " << folderPath << endl;
+        cerr << "Impossible d'ouvrir le dossier: " << folderPath << endl;
         exit(-1);
     }
-    // Sort files to ensure they are processed in order
+    // Trier les fichiers pour assurer l'ordre
     sort(imageFiles.begin(), imageFiles.end());
     return imageFiles;
 }
@@ -89,10 +81,10 @@ Net loadModel() {
     return net;
 }
 
-// Détection d'objets avec OpenMP
+// Détection d'objets
 vector<Rect> detectObjects(Net &net, Mat &img, vector<Point2f>& centers) {
     Mat img2;
-    resize(img, img2, Size(300, 300));  // Resize to a smaller size to improve performance
+    resize(img, img2, Size(300, 300));  // Redimensionner pour améliorer les performances
 
     Mat inputBlob = blobFromImage(img2, 0.007843, Size(224, 224), Scalar(127.5, 127.5, 127.5), false);
     net.setInput(inputBlob, "data");
@@ -103,8 +95,6 @@ vector<Rect> detectObjects(Net &net, Mat &img, vector<Point2f>& centers) {
     float confidenceThreshold = 0.2;
     vector<Rect> bboxes;
 
-    // Parallelize the loop using OpenMP with reduced threads
-    #pragma omp parallel for num_threads(4)
     for (int i = 0; i < detectionMat.rows; i++) {
         float confidence = detectionMat.at<float>(i, 2);
         if (confidence > confidenceThreshold) {
@@ -117,15 +107,11 @@ vector<Rect> detectObjects(Net &net, Mat &img, vector<Point2f>& centers) {
             Rect bbox(xLeftBottom, yLeftBottom, xRightTop - xLeftBottom, yRightTop - yLeftBottom);
             Point2f center((xLeftBottom + xRightTop) / 2, (yLeftBottom + yRightTop) / 2);
 
-            // Critical section to avoid race conditions
-            #pragma omp critical
-            {
-                bboxes.push_back(bbox);
-                centers.push_back(center);
-                rectangle(img, bbox, Scalar(0, 255, 0), 2);
-                putText(img, CLASSES[idx] + " " + to_string(confidence), Point(xLeftBottom, yLeftBottom - 5), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 255), 2);
-                circle(img, center, 3, Scalar(255, 0, 0), -1); // Draw center point
-            }
+            bboxes.push_back(bbox);
+            centers.push_back(center);
+            rectangle(img, bbox, Scalar(0, 255, 0), 2);
+            putText(img, CLASSES[idx] + " " + to_string(confidence), Point(xLeftBottom, yLeftBottom - 5), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 255), 2);
+            circle(img, center, 3, Scalar(255, 0, 0), -1); // Dessiner le point central
         }
     }
     return bboxes;
@@ -134,36 +120,36 @@ vector<Rect> detectObjects(Net &net, Mat &img, vector<Point2f>& centers) {
 int main() {
     double startTime = (double)getTickCount();
 
-    // Path to the dataset folder and timestamp file
-    string folderPath = "/home/odroid/Desktop/parallel/lidar/data/image_02/data/";
-    string timestampFile = "/home/odroid/Desktop/parallel/lidar/data/image_02/timestamps.txt";
+    // Chemin du dossier et fichier des timestamps
+    string folderPath = "/home/odroid/Desktop/parallel/lidar/data/image_03/data/";
+    string timestampFile = "/home/odroid/Desktop/parallel/lidar/data/image_03/timestamps.txt";
 
-    // Load timestamps
+    // Charger les timestamps
     vector<string> timestamps = loadTimestamps(timestampFile);
 
-    // Get all image files in the folder
+    // Obtenir les images du dossier
     vector<string> imageFiles = getImageFiles(folderPath);
     if (imageFiles.empty()) {
-        cerr << "No images found in the folder!" << endl;
+        cerr << "Aucune image trouvée dans le dossier !" << endl;
         return -1;
     }
 
     // Charger MobileNet-SSD
     Net net = loadModel();
 
-    // Variables for object tracking
+    // Variables pour le suivi des objets
     vector<int> objectIDs;
     vector<Rect> prevBboxes;
     int nextID = 0;
 
-    // Output file to save coordinates and timestamps
-    ofstream outputFile("object_trajectories.txt");
+    // Fichier de sortie pour sauvegarder les coordonnées et timestamps
+    ofstream outputFile("object_trajectories2.txt");
     if (!outputFile.is_open()) {
-        cerr << "Could not open output file!" << endl;
+        cerr << "Impossible d'ouvrir le fichier de sortie !" << endl;
         return -1;
     }
 
-    // Process each image in the dataset
+    // Traitement de chaque image
     for (size_t i = 0; i < imageFiles.size(); ++i) {
         Mat img = imread(imageFiles[i], IMREAD_COLOR);
         if (img.empty()) {
@@ -171,45 +157,41 @@ int main() {
             continue;
         }
 
-        // Detect objects and get bounding boxes and centers
+        // Détecter les objets et récupérer les boîtes englobantes et centres
         vector<Point2f> centers;
         vector<Rect> bboxes = detectObjects(net, img, centers);
 
-        // Assign IDs to objects based on IoU with previous frame
+        // Assigner des IDs aux objets détectés
         vector<int> currentIDs(bboxes.size(), -1);
         for (size_t j = 0; j < bboxes.size(); ++j) {
             for (size_t k = 0; k < prevBboxes.size(); ++k) {
                 float iou = computeIoU(bboxes[j], prevBboxes[k]);
-                if (iou > 0.5) { // Threshold for matching objects
+                if (iou > 0.5) {
                     currentIDs[j] = objectIDs[k];
                     break;
                 }
             }
-            if (currentIDs[j] == -1) { // New object
+            if (currentIDs[j] == -1) {
                 currentIDs[j] = nextID++;
             }
         }
 
-        // Save object coordinates and timestamps to file
+        // Sauvegarde des données
         for (size_t j = 0; j < bboxes.size(); ++j) {
             outputFile << "ID: " << currentIDs[j] << ", Center: (" << centers[j].x << ", " << centers[j].y
                        << "), Timestamp: " << timestamps[i] << endl;
         }
 
-        // Update previous bounding boxes and IDs
         prevBboxes = bboxes;
         objectIDs = currentIDs;
 
-        // Display the image with detected objects and centers
         imshow("Detected Objects", img);
-        waitKey(1); // Wait for a short time to display the image
+        waitKey(1);
     }
 
-    // Cleanup
     outputFile.close();
     double endTime = (double)getTickCount();
-    double elapsedTime = (endTime - startTime) / getTickFrequency();
-    cout << "Total Processing Time: " << elapsedTime << " seconds" << endl;
+    cout << "Temps total de traitement: " << (endTime - startTime) / getTickFrequency() << " secondes" << endl;
 
     return 0;
 }
