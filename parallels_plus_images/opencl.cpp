@@ -22,20 +22,104 @@ string CLASSES[] = {"background", "aeroplane", "bicycle", "bird", "boat", "bottl
         exit(1); \
     }
 
-// Function to compute Intersection over Union (IoU) on CPU
-float computeIoU(const Rect& bbox1, const Rect& bbox2) {
-    int x1 = max(bbox1.x, bbox2.x);
-    int y1 = max(bbox1.y, bbox2.y);
-    int x2 = min(bbox1.x + bbox1.width, bbox2.x + bbox2.width);
-    int y2 = min(bbox1.y + bbox1.height, bbox2.y + bbox2.height);
+// OpenCL kernel for computing IoU
+const char* iouKernelSource = R"(
+__kernel void computeIoU(__global int* bbox1, __global int* bbox2, __global float* result, int numBboxes) {
+    int gid = get_global_id(0);
+    if (gid >= numBboxes) return;
+
+    int x1 = max(bbox1[gid * 4 + 0], bbox2[gid * 4 + 0]);
+    int y1 = max(bbox1[gid * 4 + 1], bbox2[gid * 4 + 1]);
+    int x2 = min(bbox1[gid * 4 + 0] + bbox1[gid * 4 + 2], bbox2[gid * 4 + 0] + bbox2[gid * 4 + 2]);
+    int y2 = min(bbox1[gid * 4 + 1] + bbox1[gid * 4 + 3], bbox2[gid * 4 + 1] + bbox2[gid * 4 + 3]);
 
     int intersectionArea = max(0, x2 - x1) * max(0, y2 - y1);
-    int bbox1Area = bbox1.width * bbox1.height;
-    int bbox2Area = bbox2.width * bbox2.height;
+    int bbox1Area = bbox1[gid * 4 + 2] * bbox1[gid * 4 + 3];
+    int bbox2Area = bbox2[gid * 4 + 2] * bbox2[gid * 4 + 3];
 
     int unionArea = bbox1Area + bbox2Area - intersectionArea;
 
-    return float(intersectionArea) / float(unionArea);
+    result[gid] = (float)intersectionArea / (float)unionArea;
+}
+)";
+
+// Function to compute Intersection over Union (IoU) on GPU
+vector<float> computeIoU_GPU(cl_context context, cl_command_queue queue, cl_kernel kernel, const vector<Rect>& bboxes1, const vector<Rect>& bboxes2) {
+    cl_int err;
+
+    // Prepare data for GPU
+    vector<int> bbox1Data, bbox2Data;
+    for (const auto& bbox : bboxes1) {
+        bbox1Data.push_back(bbox.x);
+        bbox1Data.push_back(bbox.y);
+        bbox1Data.push_back(bbox.width);
+        bbox1Data.push_back(bbox.height);
+    }
+    for (const auto& bbox : bboxes2) {
+        bbox2Data.push_back(bbox.x);
+        bbox2Data.push_back(bbox.y);
+        bbox2Data.push_back(bbox.width);
+        bbox2Data.push_back(bbox.height);
+    }
+
+    size_t numBboxes = bboxes1.size();
+    vector<float> results(numBboxes);
+
+    // Validate buffer sizes
+    size_t bbox1BufferSize = bbox1Data.size() * sizeof(int);
+    size_t bbox2BufferSize = bbox2Data.size() * sizeof(int);
+    size_t resultBufferSize = numBboxes * sizeof(float);
+
+    if (bbox1BufferSize == 0 || bbox2BufferSize == 0 || resultBufferSize == 0) {
+        cerr << "Error: Buffer size is zero. Check bounding box data." << endl;
+        return results;
+    }
+
+    // Create OpenCL buffers
+    cl_mem bbox1Buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, bbox1BufferSize, bbox1Data.data(), &err);
+    if (err != CL_SUCCESS) {
+        cerr << "clCreateBuffer bbox1Buffer failed with error " << err << ". Buffer size: " << bbox1BufferSize << endl;
+        return results;
+    }
+    cl_mem bbox2Buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, bbox2BufferSize, bbox2Data.data(), &err);
+    if (err != CL_SUCCESS) {
+        cerr << "clCreateBuffer bbox2Buffer failed with error " << err << ". Buffer size: " << bbox2BufferSize << endl;
+        clReleaseMemObject(bbox1Buffer);
+        return results;
+    }
+    cl_mem resultBuffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY, resultBufferSize, NULL, &err);
+    if (err != CL_SUCCESS) {
+        cerr << "clCreateBuffer resultBuffer failed with error " << err << ". Buffer size: " << resultBufferSize << endl;
+        clReleaseMemObject(bbox1Buffer);
+        clReleaseMemObject(bbox2Buffer);
+        return results;
+    }
+
+    // Set kernel arguments
+    err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &bbox1Buffer);
+    CHECK_ERROR(err, "clSetKernelArg bbox1Buffer");
+    err = clSetKernelArg(kernel, 1, sizeof(cl_mem), &bbox2Buffer);
+    CHECK_ERROR(err, "clSetKernelArg bbox2Buffer");
+    err = clSetKernelArg(kernel, 2, sizeof(cl_mem), &resultBuffer);
+    CHECK_ERROR(err, "clSetKernelArg resultBuffer");
+    err = clSetKernelArg(kernel, 3, sizeof(int), &numBboxes);
+    CHECK_ERROR(err, "clSetKernelArg numBboxes");
+
+    // Execute the kernel
+    size_t globalSize = numBboxes;
+    err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, &globalSize, NULL, 0, NULL, NULL);
+    CHECK_ERROR(err, "clEnqueueNDRangeKernel");
+
+    // Read the results back from the GPU
+    err = clEnqueueReadBuffer(queue, resultBuffer, CL_TRUE, 0, resultBufferSize, results.data(), 0, NULL, NULL);
+    CHECK_ERROR(err, "clEnqueueReadBuffer");
+
+    // Cleanup
+    clReleaseMemObject(bbox1Buffer);
+    clReleaseMemObject(bbox2Buffer);
+    clReleaseMemObject(resultBuffer);
+
+    return results;
 }
 
 // Function to load timestamps from file
@@ -104,7 +188,7 @@ vector<Rect> detectObjects(Net &net, Mat &img, vector<Point2f>& centers) {
     vector<Rect> bboxes;
 
     // Parallelize the loop using OpenMP with reduced threads
-    #pragma omp parallel for num_threads(4)
+    #pragma omp parallel for num_threads(2)
     for (int i = 0; i < detectionMat.rows; i++) {
         float confidence = detectionMat.at<float>(i, 2);
         if (confidence > confidenceThreshold) {
@@ -129,25 +213,6 @@ vector<Rect> detectObjects(Net &net, Mat &img, vector<Point2f>& centers) {
     }
     return bboxes;
 }
-
-// OpenCL kernel for computing IoU
-const char* iouKernelSource = R"(
-__kernel void computeIoU(__global int* bbox1, __global int* bbox2, __global float* result) {
-    int gid = get_global_id(0);
-    int x1 = max(bbox1[gid * 4 + 0], bbox2[gid * 4 + 0]);
-    int y1 = max(bbox1[gid * 4 + 1], bbox2[gid * 4 + 1]);
-    int x2 = min(bbox1[gid * 4 + 2] + bbox1[gid * 4 + 0], bbox2[gid * 4 + 4] + bbox2[gid * 4 + 0]);
-    int y2 = min(bbox1[gid * 4 + 3] + bbox1[gid * 4 + 1], bbox2[gid * 4 + 5] + bbox2[gid * 4 + 1]);
-
-    int intersectionArea = max(0, x2 - x1) * max(0, y2 - y1);
-    int bbox1Area = bbox1[gid * 4 + 2] * bbox1[gid * 4 + 3];
-    int bbox2Area = bbox2[gid * 4 + 4] * bbox2[gid * 4 + 5];
-
-    int unionArea = bbox1Area + bbox2Area - intersectionArea;
-
-    result[gid] = (float)intersectionArea / (float)unionArea;
-}
-)";
 
 int main() {
     double startTime = (double)getTickCount();
@@ -183,6 +248,12 @@ int main() {
     kernel = clCreateKernel(program, "computeIoU", &err);
     CHECK_ERROR(err, "clCreateKernel");
 
+    // Query device limits
+    cl_ulong maxMemAllocSize;
+    err = clGetDeviceInfo(device, CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(cl_ulong), &maxMemAllocSize, NULL);
+    CHECK_ERROR(err, "clGetDeviceInfo CL_DEVICE_MAX_MEM_ALLOC_SIZE");
+    cout << "Max memory allocation size: " << maxMemAllocSize << " bytes" << endl;
+
     // Path to the dataset folder and timestamp file
     string folderPath = "/home/odroid/Desktop/parallel/lidar/data/image_02/data/";
     string timestampFile = "/home/odroid/Desktop/parallel/lidar/data/image_02/timestamps.txt";
@@ -203,6 +274,7 @@ int main() {
     // Variables for object tracking
     vector<int> objectIDs;
     vector<Rect> prevBboxes;
+    vector<Point2f> prevCenters;
     int nextID = 0;
 
     // Output file to save coordinates and timestamps
@@ -226,27 +298,45 @@ int main() {
 
         // Assign IDs to objects based on IoU with previous frame
         vector<int> currentIDs(bboxes.size(), -1);
-        for (size_t j = 0; j < bboxes.size(); ++j) {
-            for (size_t k = 0; k < prevBboxes.size(); ++k) {
-                float iou = computeIoU(bboxes[j], prevBboxes[k]);
-                if (iou > 0.5) { // Threshold for matching objects
-                    currentIDs[j] = objectIDs[k];
-                    break;
+        if (!prevBboxes.empty()) {
+            vector<float> ious = computeIoU_GPU(context, queue, kernel, bboxes, prevBboxes);
+            for (size_t j = 0; j < bboxes.size(); ++j) {
+                for (size_t k = 0; k < prevBboxes.size(); ++k) {
+                    if (ious[j * prevBboxes.size() + k] > 0.5) { // Threshold for matching objects
+                        currentIDs[j] = objectIDs[k];
+                        break;
+                    }
+                }
+                if (currentIDs[j] == -1) { // New object
+                    currentIDs[j] = nextID++;
                 }
             }
-            if (currentIDs[j] == -1) { // New object
+        } else {
+            for (size_t j = 0; j < bboxes.size(); ++j) {
                 currentIDs[j] = nextID++;
             }
         }
 
-        // Save object coordinates and timestamps to file
+        // Calculate velocities
+        vector<Point2f> velocities(centers.size(), Point2f(0, 0));
+        if (!prevCenters.empty()) {
+            for (size_t j = 0; j < centers.size(); ++j) {
+                if (currentIDs[j] != -1 && currentIDs[j] < prevCenters.size()) {
+                    velocities[j] = centers[j] - prevCenters[currentIDs[j]];
+                }
+            }
+        }
+
+        // Save object coordinates, velocities, and timestamps to file
         for (size_t j = 0; j < bboxes.size(); ++j) {
             outputFile << "ID: " << currentIDs[j] << ", Center: (" << centers[j].x << ", " << centers[j].y
+                       << "), Velocity: (" << velocities[j].x << ", " << velocities[j].y
                        << "), Timestamp: " << timestamps[i] << endl;
         }
 
-        // Update previous bounding boxes and IDs
+        // Update previous bounding boxes, centers, and IDs
         prevBboxes = bboxes;
+        prevCenters = centers;
         objectIDs = currentIDs;
 
         // Display the image with detected objects and centers
